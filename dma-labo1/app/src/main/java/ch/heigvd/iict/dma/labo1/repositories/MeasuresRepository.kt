@@ -5,9 +5,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import ch.heigvd.iict.dma.labo1.models.*
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.net.URL
+import java.net.HttpURLConnection
 import kotlin.system.measureTimeMillis
 
 class MeasuresRepository(private val scope : CoroutineScope,
@@ -43,6 +47,11 @@ class MeasuresRepository(private val scope : CoroutineScope,
         _measures.postValue(mutableListOf())
     }
 
+    class Response (val _id: Number?, val _status: String?) {
+        var id: Number? = _id
+        var status: String? = _status
+    }
+
     fun sendMeasureToServer(encryption : Encryption, compression : Compression, networkType : NetworkType, serialisation : Serialisation) {
         scope.launch(Dispatchers.Default) {
 
@@ -51,8 +60,46 @@ class MeasuresRepository(private val scope : CoroutineScope,
                 Encryption.SSL -> httpsUrl
             }
 
+            val contentType = when (serialisation) {
+                Serialisation.JSON -> "application/json"
+                Serialisation.XML -> "application/xml"
+                Serialisation.PROTOBUF -> "application/protobuf"
+            }
+
+            val gson = Gson()
+
             val elapsed = measureTimeMillis {
-                Log.e("SendViewModel", "Implement me !!! Send measures to $url") //TODO
+                //Log.e("SendViewModel", "Implement me !!! Send measures to $url")
+
+                val body = when (serialisation) {
+                    Serialisation.JSON -> gson.toJson(measures.value)
+                    Serialisation.XML -> TODO()
+                    Serialisation.PROTOBUF -> TODO()
+                }
+
+                val urlConnection = URL(url)
+                val con = urlConnection.openConnection() as HttpURLConnection
+                con.requestMethod = "POST"
+                con.setRequestProperty("Content-Type", contentType)
+                con.setRequestProperty("X-Content-Encoding", compression.toString())
+                con.setRequestProperty("User-Agent", "Larry_le_malicieux")
+
+                if (networkType != NetworkType.RANDOM) {
+                    con.setRequestProperty("X-Network-Type", networkType.toString())
+                }
+                Log.d("Req", con.toString())
+                Log.d("Req", body)
+
+                // Ajoute le body
+                val os = con.outputStream
+                os.write(body.toByteArray())
+                os.close()
+
+                // Récupère la réponse
+                val json = con.inputStream.bufferedReader().use { it.readText() }
+                Log.d("Req", json)
+                //val type = object : TypeToken<Response>() {}.type
+                //Gson().fromJson<Response>(json, type)
             }
             _requestDuration.postValue(elapsed)
         }
