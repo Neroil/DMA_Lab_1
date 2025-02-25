@@ -32,7 +32,8 @@ class GraphQLRepository(private val scope : CoroutineScope, private val httpsUrl
                 // TODO make the request to server
                 // fill _authors LiveData with list of all authors
 
-                //placeholder
+
+
                 _authors.postValue(testAuthors)
             }
             _requestDuration.postValue(elapsed)
