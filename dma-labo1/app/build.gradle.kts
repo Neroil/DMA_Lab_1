@@ -64,6 +64,7 @@ dependencies {
     // Serializations libs
     implementation(libs.jdom2)
     implementation(libs.gson)
+    implementation("com.google.protobuf:protobuf-kotlin:3.25.6")
 
     // Room components
     implementation(libs.room.runtime)
