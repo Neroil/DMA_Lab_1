@@ -77,8 +77,8 @@ class MeasuresRepository(private val scope : CoroutineScope,
                 //Log.e("SendViewModel", "Implement me !!! Send measures to $url")
 
                 val body = when (serialisation) {
-                    Serialisation.JSON -> gson.toJson(measures.value)
-                    Serialisation.XML -> toXML()
+                    Serialisation.JSON -> gson.toJson(measures.value).toByteArray()
+                    Serialisation.XML -> toXML().toByteArray()
                     Serialisation.PROTOBUF -> TODO()
                 }
 
@@ -93,11 +93,10 @@ class MeasuresRepository(private val scope : CoroutineScope,
                     con.setRequestProperty("X-Network-Type", networkType.toString())
                 }
                 Log.d("Req", con.toString())
-                Log.d("Req", body)
 
                 // Ajoute le body
                 val os = con.outputStream
-                os.write(body.toByteArray())
+                os.write(body)
                 os.close()
 
                 // Récupère la réponse
