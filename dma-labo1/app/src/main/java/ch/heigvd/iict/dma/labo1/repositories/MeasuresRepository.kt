@@ -137,7 +137,17 @@ class MeasuresRepository(private val scope : CoroutineScope,
                             Log.e("XML", "Error parsing XML: ${e.message}", e)
                         }
                     }
-                    Serialisation.PROTOBUF -> TODO()
+                    Serialisation.PROTOBUF -> {
+                        val builder = MeasuresOuterClass.MeasuresAck.newBuilder()
+                        builder.mergeFrom(response.toByteArray())
+                        try{
+                            for(ack in builder.build().measuresList){
+                                updateMeasureStatus(Measure.Status.valueOf(ack.status.toString()), ack.id)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("Protobuf", "Error parsing Protobuf: ${e.message}", e)
+                        }
+                    }
                 }
 
                 //val type = object : TypeToken<Response>() {}.type
