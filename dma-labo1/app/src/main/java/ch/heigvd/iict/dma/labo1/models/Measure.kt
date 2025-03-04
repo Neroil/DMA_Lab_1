@@ -1,5 +1,6 @@
 package ch.heigvd.iict.dma.labo1.models
 
+import ch.heigvd.iict.dma.protobuf.MeasuresOuterClass
 import java.util.Calendar
 import java.util.GregorianCalendar
 import java.util.Random
@@ -23,6 +24,16 @@ data class Measure(
         NEW,
         OK,
         ERROR
+    }
+
+    fun toProtobuf() : MeasuresOuterClass.Measure {
+        val builder = MeasuresOuterClass.Measure.newBuilder()
+        builder.setId(id)
+        builder.setStatus(MeasuresOuterClass.Status.valueOf(status.ordinal))
+        builder.setType(type.toString())
+        builder.setValue(value)
+        builder.setDate(date.timeInMillis)
+        return builder.build()
     }
 
     companion object {

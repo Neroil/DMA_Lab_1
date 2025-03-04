@@ -5,7 +5,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import ch.heigvd.iict.dma.labo1.models.*
+import ch.heigvd.iict.dma.protobuf.MeasuresOuterClass
 import com.google.gson.Gson
+import com.google.protobuf.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -76,10 +78,15 @@ class MeasuresRepository(private val scope : CoroutineScope,
             val elapsed = measureTimeMillis {
                 //Log.e("SendViewModel", "Implement me !!! Send measures to $url")
 
+
                 val body = when (serialisation) {
                     Serialisation.JSON -> gson.toJson(measures.value).toByteArray()
                     Serialisation.XML -> toXML().toByteArray()
-                    Serialisation.PROTOBUF -> TODO()
+                    Serialisation.PROTOBUF -> {
+                        val builder = MeasuresOuterClass.Measures.newBuilder()
+                        measures.value!!.forEach { builder.addMeasures(it.toProtobuf()) }
+                        builder.build().toByteArray()
+                    }
                 }
 
                 val urlConnection = URL(url)
@@ -93,6 +100,7 @@ class MeasuresRepository(private val scope : CoroutineScope,
                     con.setRequestProperty("X-Network-Type", networkType.toString())
                 }
                 Log.d("Req", con.toString())
+                Log.d("Req", body.toString())
 
                 // Ajoute le body
                 val os = con.outputStream
