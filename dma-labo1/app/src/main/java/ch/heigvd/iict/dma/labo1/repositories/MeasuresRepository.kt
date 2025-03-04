@@ -16,9 +16,13 @@ import org.jdom2.Document
 import org.jdom2.Element
 import org.jdom2.input.SAXBuilder
 import org.jdom2.output.XMLOutputter
+import java.io.InputStream
 import java.io.StringReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.zip.Deflater
+import java.util.zip.DeflaterOutputStream
+import java.util.zip.InflaterInputStream
 import kotlin.system.measureTimeMillis
 
 class MeasuresRepository(private val scope : CoroutineScope,
@@ -93,33 +97,50 @@ class MeasuresRepository(private val scope : CoroutineScope,
                 val con = urlConnection.openConnection() as HttpURLConnection
                 con.requestMethod = "POST"
                 con.setRequestProperty("Content-Type", contentType)
+                Log.d("Req", "compression envoyée : ${compression.toString()}")
                 con.setRequestProperty("X-Content-Encoding", compression.toString())
                 con.setRequestProperty("User-Agent", "Larry_le_malicieux")
 
                 if (networkType != NetworkType.RANDOM) {
                     con.setRequestProperty("X-Network-Type", networkType.toString())
                 }
-                Log.d("Req", con.toString())
-                Log.d("Req", body.toString())
 
-                // Ajoute le body
                 val os = con.outputStream
-                os.write(body)
-                os.close()
+                when (compression){
+                    Compression.DISABLED -> {
+                        os.write(body)
+                        os.close()
+                    }
+                    Compression.DEFLATE -> {
+                        val dos = DeflaterOutputStream(os, Deflater(Deflater.BEST_COMPRESSION,true))
+                        dos.write(body)
+                        dos.close()
+                    }
+                }
 
                 // Récupère la réponse
-                val response = con.inputStream.bufferedReader().use { it.readText() }
+                val inpst = when (con.getHeaderField("X-Content-Encoding")){
+                    "DEFLATE" -> {
+                        InflaterInputStream(con.inputStream)
 
-                when (serialisation){
-                    Serialisation.JSON -> {
+                    }
+                    else -> {
+                        con.inputStream
+                    }
+                }
+
+                val response = inpst.bufferedReader().use { it.readText() }
+
+                Log.d("Req", "header content type : ${con.getHeaderField("Content-Type")}")
+                when (con.getHeaderField("Content-Type")){
+                    "application/json;charset=UTF-8" -> {
                         Log.d("Req", "response: $response")
                         val statusList = gson.fromJson(response, Array<Response>::class.java)
                         for (status in statusList){
                             updateMeasureStatus(Measure.Status.valueOf(status.status!!), status.id!!.toInt())
                         }
                     }
-                    Serialisation.XML -> {
-
+                    "application/xml;charset=UTF-8" -> {
                         try {
                             val builder = SAXBuilder()
                             // Crashes if not set to false
@@ -137,7 +158,7 @@ class MeasuresRepository(private val scope : CoroutineScope,
                             Log.e("XML", "Error parsing XML: ${e.message}", e)
                         }
                     }
-                    Serialisation.PROTOBUF -> {
+                    "application/protobuf" -> {
                         val builder = MeasuresOuterClass.MeasuresAck.newBuilder()
                         builder.mergeFrom(response.toByteArray())
                         try{
