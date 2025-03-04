@@ -1,11 +1,16 @@
 package ch.heigvd.iict.dma.labo1.repositories
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import ch.heigvd.iict.dma.labo1.models.*
+import ch.heigvd.iict.dma.labo1.repositories.MeasuresRepository.Response
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlin.system.measureTimeMillis
 
 class GraphQLRepository(private val scope : CoroutineScope, private val httpsUrl : String = "https://mobile.iict.ch/graphql") {
@@ -26,15 +31,42 @@ class GraphQLRepository(private val scope : CoroutineScope, private val httpsUrl
         _requestDuration.postValue(-1L)
     }
 
+    private fun openConnection(query: String): HttpURLConnection {
+        val urlConnection = URL(httpsUrl)
+        val con = urlConnection.openConnection() as HttpURLConnection
+        con.requestMethod = "POST"
+        con.setRequestProperty("Content-Type", "application/json")
+        con.setRequestProperty("User-Agent", "Larry_le_malicieux")
+        val queryJson = "{\"query\":\"$query\"}"
+        Log.d("GraphQL", "Query: $queryJson")
+        con.outputStream.write(queryJson.toByteArray())
+        con.outputStream.close()
+        return con
+    }
+
     fun loadAllAuthorsList() {
+
         scope.launch(Dispatchers.Default) {
             val elapsed = measureTimeMillis {
-                // TODO make the request to server
-                // fill _authors LiveData with list of all authors
 
+                val query = "{findAllAuthors{id, name}}"
 
+                try{
+                    // Effectue la requête GraphQL
+                    val con = openConnection(query)
+                    val result = con.inputStream.bufferedReader().use { it.readText() }
+                    Log.d("GraphQL", "Result: $result")
 
-                _authors.postValue(testAuthors)
+                    // Parse le résultat JSON
+                    val parsedResult = result.removePrefix("{\"data\":{\"findAllAuthors\":").removeSuffix("}}")
+                    val authorsList = Gson().fromJson(parsedResult, Array<Author>::class.java)
+
+                    // Met à jour la liste des auteurs
+                    _authors.postValue(authorsList.toList())
+                } catch (e: Exception){
+                    Log.e("GraphQL", e.toString())
+                    _authors.postValue(testAuthors)
+                }
             }
             _requestDuration.postValue(elapsed)
         }
@@ -42,6 +74,9 @@ class GraphQLRepository(private val scope : CoroutineScope, private val httpsUrl
 
     fun loadBooksFromAuthor(author: Author) {
         scope.launch(Dispatchers.Default) {
+
+            //val query = "{findAllAuthors{id, name}}"
+
             val elapsed = measureTimeMillis {
                 // TODO make the request to server
                 // fill _books LiveData with list of book of the author
