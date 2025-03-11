@@ -75,15 +75,27 @@ class GraphQLRepository(private val scope : CoroutineScope, private val httpsUrl
     fun loadBooksFromAuthor(author: Author) {
         scope.launch(Dispatchers.Default) {
 
-            //val query = "{findAllAuthors{id, name}}"
-
             val elapsed = measureTimeMillis {
-                // TODO make the request to server
-                // fill _books LiveData with list of book of the author
+                val query = "{findAuthorById(id: ${author.id}){books{id, title, publicationDate, authors{id, name}}}}"
 
-                //placeholder
-                _books.postValue(testBooks)
+                try{
+                    // Effectue la requête GraphQL
+                    val con = openConnection(query)
+                    val result = con.inputStream.bufferedReader().use { it.readText() }
+                    Log.d("GraphQL", "Result: $result")
+
+                    // Parse le résultat JSON
+                    val parsedResult = result.removePrefix("{\"data\":{\"findAuthorById\":{\"books\":").removeSuffix("}}}")
+                    val booksList = Gson().fromJson(parsedResult, Array<Book>::class.java)
+
+                    // Met à jour la liste des auteurs
+                    _books.postValue(booksList.toList())
+                } catch (e: Exception){
+                    Log.e("GraphQL", e.toString())
+                    _books.postValue(testBooks)
+                }
             }
+
             _requestDuration.postValue(elapsed)
         }
     }
