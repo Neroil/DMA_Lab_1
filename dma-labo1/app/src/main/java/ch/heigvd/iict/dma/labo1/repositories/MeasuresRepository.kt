@@ -103,7 +103,7 @@ class MeasuresRepository(private val scope : CoroutineScope,
                 con.setRequestProperty("User-Agent", "Larry_le_malicieux")
 
                 if (networkType != NetworkType.RANDOM) {
-                    con.setRequestProperty("X-Network-Type", networkType.toString())
+                    con.setRequestProperty("X-Network", networkType.name)
                 }
 
                 val os = con.outputStream
