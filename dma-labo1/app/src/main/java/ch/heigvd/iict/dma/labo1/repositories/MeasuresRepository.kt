@@ -22,6 +22,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.zip.Deflater
 import java.util.zip.DeflaterOutputStream
+import java.util.zip.Inflater
 import java.util.zip.InflaterInputStream
 import kotlin.system.measureTimeMillis
 
@@ -118,10 +119,12 @@ class MeasuresRepository(private val scope : CoroutineScope,
                     }
                 }
 
+
+
                 // Récupère la réponse
                 val inpst = when (con.getHeaderField("X-Content-Encoding")){
                     "DEFLATE" -> {
-                        InflaterInputStream(con.inputStream)
+                        InflaterInputStream(con.inputStream, Inflater(true))
 
                     }
                     else -> {
