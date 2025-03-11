@@ -125,7 +125,6 @@ class MeasuresRepository(private val scope : CoroutineScope,
                 val inpst = when (con.getHeaderField("X-Content-Encoding")){
                     "DEFLATE" -> {
                         InflaterInputStream(con.inputStream, Inflater(true))
-
                     }
                     else -> {
                         con.inputStream
