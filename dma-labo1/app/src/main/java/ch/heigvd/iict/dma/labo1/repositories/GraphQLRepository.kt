@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import ch.heigvd.iict.dma.labo1.models.*
-import ch.heigvd.iict.dma.labo1.repositories.MeasuresRepository.Response
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +51,6 @@ class GraphQLRepository(private val scope : CoroutineScope, private val httpsUrl
                 val query = "{findAllAuthors{id, name}}"
 
                 try{
-                    // Effectue la requête GraphQL
                     val con = openConnection(query)
                     val result = con.inputStream.bufferedReader().use { it.readText() }
                     Log.d("GraphQL", "Result: $result")
@@ -79,7 +77,6 @@ class GraphQLRepository(private val scope : CoroutineScope, private val httpsUrl
                 val query = "{findAuthorById(id: ${author.id}){books{id, title, publicationDate, authors{id, name}}}}"
 
                 try{
-                    // Effectue la requête GraphQL
                     val con = openConnection(query)
                     val result = con.inputStream.bufferedReader().use { it.readText() }
                     Log.d("GraphQL", "Result: $result")
@@ -101,7 +98,6 @@ class GraphQLRepository(private val scope : CoroutineScope, private val httpsUrl
     }
 
     companion object {
-        //placeholder data - to remove
         private val testAuthors = listOf(Author(-1, "Test Author", emptyList()))
         private val testBooks = listOf(Book(-1, "Test Title", "01.01.2024", testAuthors))
     }

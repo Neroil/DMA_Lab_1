@@ -1,9 +1,6 @@
 package ch.heigvd.iict.dma.labo1.service
 
-import android.app.Application
 import android.util.Log
-import ch.heigvd.iict.dma.labo1.Labo1Application
-import ch.heigvd.iict.dma.labo1.database.MessagesDao
 import ch.heigvd.iict.dma.labo1.database.MessagesDatabase
 import ch.heigvd.iict.dma.labo1.models.Message
 import ch.heigvd.iict.dma.labo1.repositories.MessagesRepository
@@ -13,7 +10,7 @@ import java.util.Calendar
 
 class FirebaseService : FirebaseMessagingService() {
 
-    val repository by lazy {
+    private val repository by lazy {
         MessagesRepository(MessagesDatabase.getDatabase(this).messagesDao())
     }
 
